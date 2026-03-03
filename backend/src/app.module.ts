@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { AuthModule } from './auth/auth.module';
 
     UsersModule,
     AuthModule,
+    DashboardModule,
+    InvoicesModule,
   ],
 })
 export class AppModule {}

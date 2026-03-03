@@ -8,6 +8,7 @@ import RevenueChart from "../components/RevenueCharts";
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null); // ✅ ADD THIS
   const router = useRouter();
 
   useEffect(() => {
@@ -18,14 +19,17 @@ export default function Dashboard() {
       return;
     }
 
-    api
-      .get("/users/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((res) => {
-        setUser(res.data);
+    Promise.all([
+      api.get("/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      api.get("/dashboard/stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ])
+      .then(([userRes, statsRes]) => {
+        setUser(userRes.data);
+        setStats(statsRes.data);
       })
       .catch(() => {
         router.push("/login");
@@ -35,7 +39,6 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
 
-      {/* Welcome Section */}
       <div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
           Welcome {user?.email}
@@ -45,31 +48,34 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Cards Grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-        <DashboardCard
-          title="Total Revenue"
-          value="$12,450"
-          subtitle="This month"
-        />
+        {stats && (
+          <>
+            <DashboardCard
+              title="Total Revenue"
+              value={`$${stats.totalRevenue}`}
+              subtitle="This month"
+            />
 
-        <DashboardCard
-          title="Pending Invoices"
-          value="18"
-          subtitle="Awaiting payment"
-        />
+            <DashboardCard
+              title="Pending Invoices"
+              value={stats.pendingInvoices}
+              subtitle="Awaiting payment"
+            />
 
-        <DashboardCard
-          title="Customers"
-          value="42"
-          subtitle="Active clients"
-        />
+            <DashboardCard
+              title="Customers"
+              value={stats.customers}
+              subtitle="Active clients"
+            />
+          </>
+        )}
+
         <RevenueChart />
 
       </div>
 
-      {/* Recent Activity Section */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <h3 className="font-semibold mb-4 text-slate-700 dark:text-white">
           Recent Activity

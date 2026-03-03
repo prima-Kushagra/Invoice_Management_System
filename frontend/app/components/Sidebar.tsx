@@ -19,15 +19,15 @@ export default function Sidebar({
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Invoices", href: "/dashboard/invoices" },
-    { name: "Customers", href: "/dashboard/customers" },
-    { name: "Settings", href: "/dashboard/settings" },
+    { name: "Dashboard", href: "/dashboard", icon: "📊" },
+    { name: "Invoices", href: "/dashboard/invoices", icon: "🧾" },
+    { name: "Customers", href: "/dashboard/customers", icon: "👥" },
+    { name: "Settings", href: "/dashboard/settings", icon: "⚙️" },
   ];
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
@@ -38,16 +38,19 @@ export default function Sidebar({
       <aside
         className={`
           fixed md:static z-50
-          bg-white dark:bg-slate-800
-          border-r border-slate-200 dark:border-slate-700
           h-full
           transition-all duration-300
           ${collapsed ? "w-20" : "w-64"}
           ${mobileOpen ? "left-0" : "-left-64"}
           md:left-0
+          bg-white dark:bg-slate-800
+          border-r border-slate-200 dark:border-slate-700
+          flex flex-col
         `}
       >
+        {/* Top Section */}
         <div className="flex items-center justify-between p-4">
+
           {!collapsed && (
             <h2 className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">
               Invoice SaaS
@@ -56,26 +59,39 @@ export default function Sidebar({
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:block text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            className="hidden md:flex items-center justify-center w-8 h-8 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition"
           >
-            ☰
+            {collapsed ? "➡️" : "⬅️"}
           </button>
         </div>
 
-        <nav className="mt-6 space-y-1 px-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === item.href
-                  ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                }`}
-            >
-              {collapsed ? item.name[0] : item.name}
-            </Link>
-          ))}
+        {/* Navigation */}
+        <nav className="mt-6 space-y-2 px-2">
+          {navItems.map((item) => {
+            const active = pathname === item.href;
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={`
+                  flex items-center
+                  ${collapsed ? "justify-center" : "gap-3"}
+                  px-4 py-3 rounded-lg text-sm font-medium
+                  transition-all duration-200
+                  ${active
+                    ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }
+                `}
+              >
+                <span className="text-lg">{item.icon}</span>
+
+                {!collapsed && <span>{item.name}</span>}
+              </Link>
+            );
+          })}
         </nav>
       </aside>
     </>

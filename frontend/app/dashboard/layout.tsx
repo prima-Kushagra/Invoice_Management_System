@@ -22,12 +22,7 @@ export default function DashboardLayout({
         setMobileOpen={setMobileOpen}
       />
 
-      <div
-        className={`
-          flex-1 flex flex-col transition-all duration-300
-          ${collapsed ? "md:ml-20" : "md:ml-64"}
-        `}
-      >
+      <div className="flex-1 flex flex-col transition-all duration-300">
         <Navbar setMobileOpen={setMobileOpen} />
         <main className="p-6">{children}</main>
       </div>
