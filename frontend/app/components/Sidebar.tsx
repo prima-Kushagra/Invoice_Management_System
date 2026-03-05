@@ -65,7 +65,10 @@ export default function Sidebar({
 
          <button
   onClick={() => setCollapsed(!collapsed)}
-  className="hidden md:flex items-center justify-center w-8 h-8 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-transform duration-200 hover:scale-110"
+  className="hidden md:flex items-center justify-center w-8 h-8 rounded-md 
+             text-slate-700 dark:text-slate-300
+             hover:bg-slate-200 dark:hover:bg-slate-700 
+             transition-transform duration-200 hover:scale-110"
 >
   {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
 </button>

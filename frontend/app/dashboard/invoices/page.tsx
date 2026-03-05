@@ -72,41 +72,22 @@ export default function Invoices() {
     page * perPage
   );
 
-const statusBadge = (status: string) => {
-  const base =
-"inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full font-medium";
+  const statusBadge = (status: string) => {
+    const base =
+      "inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full font-medium";
 
-  if (status === "paid")
-    return `${base} bg-green-100 text-green-700`;
+    if (status === "paid")
+      return `${base} bg-green-100 text-green-700`;
 
-  if (status === "overdue")
-    return `${base} bg-red-100 text-red-700`;
+    if (status === "overdue")
+      return `${base} bg-red-100 text-red-700`;
 
-  return `${base} bg-yellow-100 text-yellow-700`;
-};
-
-  // ---- Item helpers ----
-  const addItem = () => setItems((prev) => [...prev, defaultItem()]);
-
-  const updateItemField = (index: number, field: keyof InvoiceItem, rawValue: string) => {
-    setItems((prev) => {
-      const copy = prev.map((it) => ({ ...it })); // deep copy each object
-      if (field === "description") {
-        copy[index].description = rawValue;
-      } else if (field === "quantity") {
-        copy[index].quantity = rawValue === "" ? 0 : Number(rawValue);
-      } else if (field === "price") {
-        copy[index].price = rawValue === "" ? 0 : Number(rawValue);
-      }
-      return copy;
-    });
+    return `${base} bg-yellow-100 text-yellow-700`;
   };
 
-  // ---- Invoice CRUD ----
   const handleCreate = async () => {
     setLoading(true);
     try {
-      // Sanitise items before submit
       const sanitisedItems = items.map((it) => ({
         description: it.description,
         quantity: Number(it.quantity) || 0,
@@ -123,8 +104,6 @@ const statusBadge = (status: string) => {
         notes: form.notes,
         items: sanitisedItems,
       };
-
-      console.log("Creating invoice with payload:", JSON.stringify(payload, null, 2));
 
       await api.post("/invoices", payload, {
         headers: { Authorization: `Bearer ${token}` },
@@ -143,11 +122,6 @@ const statusBadge = (status: string) => {
 
   const handlePay = async (invoice: any) => {
     try {
-      if (!invoice.total || invoice.total <= 0) {
-        alert(`This invoice has a total of ₹${invoice.total}. Please update the invoice with valid items before paying.`);
-        return;
-      }
-
       const order = await api.post("/payments/create-order", {
         invoiceId: invoice._id,
         total: invoice.total,
@@ -158,7 +132,6 @@ const statusBadge = (status: string) => {
         amount: order.data.amount,
         currency: order.data.currency,
         name: "Invoice SaaS",
-        description: `Invoice ${invoice.invoiceNumber}`,
         order_id: order.data.id,
         handler: async function () {
           await api.patch(`/invoices/${invoice._id}/pay`, {}, {
@@ -167,27 +140,24 @@ const statusBadge = (status: string) => {
           fetchInvoices();
           alert("Payment successful!");
         },
-        theme: { color: "#6366f1" },
       };
-
-      if (!(window as any).Razorpay) {
-        alert("Payment system is loading, please wait a moment and try again.");
-        return;
-      }
 
       const razor = new (window as any).Razorpay(options);
       razor.open();
-    } catch (error: any) {
-      console.error(error);
-      alert(error.response?.data?.message || error.message || "Failed to initiate payment");
+    } catch {
+      alert("Failed to initiate payment");
     }
   };
 
   return (
     <div className="space-y-8">
+
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Invoices</h2>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
+          Invoices
+        </h2>
+
         <button
           onClick={() => setShowModal(true)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
@@ -199,7 +169,8 @@ const statusBadge = (status: string) => {
       {/* Search */}
       <input
         placeholder="Search by client name..."
-        className="border px-3 py-2 rounded-lg"
+        className="border border-slate-300 dark:border-slate-600 px-3 py-2 rounded-lg 
+        bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
         onChange={(e) => setSearch(e.target.value)}
       />
 
@@ -209,8 +180,11 @@ const statusBadge = (status: string) => {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm ${filter === f ? "bg-indigo-600 text-white" : "bg-slate-100"
-              }`}
+            className={`px-4 py-2 rounded-lg text-sm transition ${
+              filter === f
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+            }`}
           >
             {f}
           </button>
@@ -218,8 +192,9 @@ const statusBadge = (status: string) => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow border overflow-hidden">
-        <div className="grid grid-cols-5 px-6 py-4 border-b text-sm font-semibold text-slate-500">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
+
+        <div className="grid grid-cols-5 px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-500 dark:text-slate-300">
           <span>Client</span>
           <span>Total</span>
           <span>Status</span>
@@ -230,7 +205,7 @@ const statusBadge = (status: string) => {
         {paginatedInvoices.map((inv) => (
           <div
             key={inv._id}
-            className="grid grid-cols-5 px-6 py-4 border-b text-sm items-center"
+            className="grid grid-cols-5 px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-sm items-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
           >
             <div>
               <p className="font-bold">{inv.clientName}</p>
@@ -239,11 +214,14 @@ const statusBadge = (status: string) => {
 
             <span>₹{inv.total}</span>
 
-            <span className={statusBadge(inv.status)}>{inv.status}</span>
+            <span className={statusBadge(inv.status)}>
+              {inv.status}
+            </span>
 
             <span>
-              
-              {inv.issueDate ? new Date(inv.issueDate).toLocaleDateString() : "-"}
+              {inv.issueDate
+                ? new Date(inv.issueDate).toLocaleDateString()
+                : "-"}
             </span>
 
             <div>
@@ -266,104 +244,51 @@ const statusBadge = (status: string) => {
           <button
             key={i}
             onClick={() => setPage(i + 1)}
-            className={`px-3 py-1 rounded ${page === i + 1 ? "bg-indigo-600 text-white" : "bg-slate-200"
-              }`}
+            className={`px-3 py-1 rounded ${
+              page === i + 1
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+            }`}
           >
             {i + 1}
           </button>
         ))}
       </div>
 
-      {/* Create Invoice Modal */}
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-2xl w-[600px] space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold">Create Invoice</h3>
+
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl w-[600px] space-y-4 max-h-[90vh] overflow-y-auto text-slate-700 dark:text-slate-200">
+
+            <h3 className="text-lg font-semibold">
+              Create Invoice
+            </h3>
 
             <input
               placeholder="Client Name"
-              className="w-full border p-2 rounded"
+              className="w-full border border-slate-300 dark:border-slate-600 p-2 rounded bg-white dark:bg-slate-700"
               value={form.clientName}
-              onChange={(e) => setForm((f) => ({ ...f, clientName: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  clientName: e.target.value,
+                }))
+              }
             />
 
             <input
               placeholder="Client Email"
-              className="w-full border p-2 rounded"
+              className="w-full border border-slate-300 dark:border-slate-600 p-2 rounded bg-white dark:bg-slate-700"
               value={form.clientEmail}
-              onChange={(e) => setForm((f) => ({ ...f, clientEmail: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  clientEmail: e.target.value,
+                }))
+              }
             />
 
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date"
-                className="border p-2 rounded"
-                value={form.issueDate}
-                onChange={(e) => setForm((f) => ({ ...f, issueDate: e.target.value }))}
-              />
-              <input
-                type="date"
-                className="border p-2 rounded"
-                value={form.dueDate}
-                onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
-              />
-            </div>
-
-            <h4 className="font-medium mt-4">Items</h4>
-
-            {items.map((item, index) => (
-              <div key={index} className="grid grid-cols-3 gap-3">
-                <input
-                  placeholder="Description"
-                  className="border p-2 rounded"
-                  value={item.description}
-                  onChange={(e) => updateItemField(index, "description", e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder="Qty"
-                  className="border p-2 rounded"
-                  value={item.quantity === 0 ? "" : item.quantity}
-                  onChange={(e) => updateItemField(index, "quantity", e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder="Price"
-                  className="border p-2 rounded"
-                  value={item.price === 0 ? "" : item.price}
-                  onChange={(e) => updateItemField(index, "price", e.target.value)}
-                />
-              </div>
-            ))}
-
-            <button onClick={addItem} className="text-indigo-600 text-sm">
-              + Add Item
-            </button>
-
-            <input
-              type="number"
-              placeholder="Tax %"
-              className="w-full border p-2 rounded"
-              value={form.tax}
-              onChange={(e) => setForm((f) => ({ ...f, tax: e.target.value }))}
-            />
-
-            <textarea
-              placeholder="Notes"
-              className="w-full border p-2 rounded"
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)}>Cancel</button>
-              <button
-                onClick={handleCreate}
-                className="bg-indigo-600 text-white px-4 py-2 rounded"
-              >
-                {loading ? "Creating..." : "Create"}
-              </button>
-            </div>
           </div>
         </div>
       )}
