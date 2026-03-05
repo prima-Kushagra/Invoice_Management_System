@@ -19,28 +19,30 @@ export default function Invoices() {
   const [loading, setLoading] = useState(false);
 
   // Multi-item state
- const [items, setItems] = useState<InvoiceItem[]>([
-  { description: "", quantity: 1, price: 0 },
-]);
+  const [items, setItems] = useState<InvoiceItem[]>([
+    { description: "", quantity: 1, price: 0 },
+  ]);
 
   const addItem = () => {
     setItems([...items, { description: "", quantity: 1, price: 0 }]);
   };
 
   type InvoiceItem = {
-  description: string;
-  quantity: number;
-  price: number;
-};
- const updateItem = <K extends keyof InvoiceItem>(
-  index: number,
-  field: K,
-  value: InvoiceItem[K]
-) => {
-  const updated = [...items];
-  updated[index][field] = value;
-  setItems(updated);
-};
+    description: string;
+    quantity: number;
+    price: number;
+  };
+  const updateItem = <K extends keyof InvoiceItem>(
+    index: number,
+    field: K,
+    value: InvoiceItem[K]
+  ) => {
+    console.log(`updateItem called! index: ${index}, field: ${field}, value: ${value}`);
+    const updated = [...items];
+    updated[index] = { ...updated[index], [field]: value };
+    console.log('New items array:', updated);
+    setItems(updated);
+  };
 
   const [form, setForm] = useState({
     clientName: "",
@@ -107,6 +109,7 @@ export default function Invoices() {
     setLoading(true);
 
     try {
+      console.log("Submitting Invoice. Items:", JSON.stringify(items), "Form:", JSON.stringify(form));
       await api.post(
         "/invoices",
         {
@@ -149,6 +152,45 @@ export default function Invoices() {
     fetchInvoices();
   };
 
+  const handlePay = async (invoice: any) => {
+    try {
+      if (invoice.total <= 0) {
+        alert("Invoice total must be greater than 0 to proceed with payment.");
+        return;
+      }
+
+      const order = await api.post("/payments/create-order", {
+        invoiceId: invoice._id,
+        total: invoice.total
+      });
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.data.amount,
+        currency: order.data.currency,
+        name: "Invoice SaaS",
+        description: `Invoice ${invoice.invoiceNumber}`,
+        order_id: order.data.id,
+
+        handler: async function () {
+          await api.patch(`/invoices/${invoice._id}/pay`);
+          fetchInvoices();
+          alert("Payment successful!");
+        },
+
+        theme: {
+          color: "#6366f1"
+        }
+      };
+
+      const razor = new (window as any).Razorpay(options);
+      razor.open();
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.message || error.message || "Failed to initiate payment");
+    }
+  };
+
   return (
     <div className="space-y-8">
 
@@ -177,11 +219,10 @@ export default function Invoices() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm ${
-              filter === f
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-100"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm ${filter === f
+              ? "bg-indigo-600 text-white"
+              : "bg-slate-100"
+              }`}
           >
             {f}
           </button>
@@ -226,10 +267,10 @@ export default function Invoices() {
             <div>
               {inv.status !== "paid" && (
                 <button
-                  onClick={() => handleMarkPaid(inv._id)}
+                  onClick={() => handlePay(inv)}
                   className="text-xs text-indigo-600 hover:underline"
                 >
-                  Mark Paid
+                  Pay
                 </button>
               )}
             </div>
@@ -243,11 +284,10 @@ export default function Invoices() {
           <button
             key={i}
             onClick={() => setPage(i + 1)}
-            className={`px-3 py-1 rounded ${
-              page === i + 1
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-200"
-            }`}
+            className={`px-3 py-1 rounded ${page === i + 1
+              ? "bg-indigo-600 text-white"
+              : "bg-slate-200"
+              }`}
           >
             {i + 1}
           </button>

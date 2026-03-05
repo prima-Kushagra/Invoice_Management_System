@@ -9,32 +9,37 @@ export class InvoicesService {
   constructor(
     @InjectModel(Invoice.name)
     private invoiceModel: Model<Invoice>,
-  ) {}
+  ) { }
 
 async create(userId: string, data: any) {
-
-  // Calculate line totals
+   console.log("DATA RECEIVED:", data);
+  console.log("ITEMS RECEIVED:", data.items);
   const itemsWithTotals = data.items.map((item: any) => {
-    const itemTotal = item.quantity * item.price;
+
+    const quantity = Number(item.quantity);
+    const price = Number(item.price);
+
+    const total = quantity * price;
+
     return {
-      ...item,
-      total: itemTotal,
+      description: item.description,
+      quantity,
+      price,
+      total,
     };
   });
 
-  // Calculate subtotal
   const subtotal = itemsWithTotals.reduce(
     (sum: number, item: any) => sum + item.total,
     0
   );
 
-  // Calculate tax
-  const taxAmount = subtotal * (data.tax / 100);
+  const tax = Number(data.tax || 0);
+  const discount = Number(data.discount || 0);
 
-  // Calculate discount
-  const discountAmount = subtotal * (data.discount / 100);
+  const taxAmount = subtotal * (tax / 100);
+  const discountAmount = subtotal * (discount / 100);
 
-  // Final total
   const total = subtotal + taxAmount - discountAmount;
 
   const invoice = new this.invoiceModel({
@@ -45,9 +50,9 @@ async create(userId: string, data: any) {
     issueDate: data.issueDate,
     dueDate: data.dueDate,
     items: itemsWithTotals,
-    tax: data.tax,
-    discount: data.discount,
     subtotal,
+    tax,
+    discount,
     total,
     status: "pending",
     notes: data.notes,
@@ -56,28 +61,28 @@ async create(userId: string, data: any) {
   return invoice.save();
 }
 
- async findByUser(userId: string) {
-  const invoices = await this.invoiceModel.find({ userId });
+  async findByUser(userId: string) {
+    const invoices = await this.invoiceModel.find({ userId });
 
-  const today = new Date();
+    const today = new Date();
 
-  return invoices.map((invoice) => {
-    if (
-      invoice.status === "pending" &&
-      new Date(invoice.dueDate) < today
-    ) {
-      invoice.status = "overdue";
-    }
+    return invoices.map((invoice) => {
+      if (
+        invoice.status === "pending" &&
+        new Date(invoice.dueDate) < today
+      ) {
+        invoice.status = "overdue";
+      }
 
-    return invoice;
-  });
-}
+      return invoice;
+    });
+  }
 
   async markAsPaid(invoiceId: string, userId: string) {
-  return this.invoiceModel.findOneAndUpdate(
-    { _id: invoiceId, userId },
-    { status: "paid" },
-    { new: true }
-  );
-}
+    return this.invoiceModel.findOneAndUpdate(
+      { _id: invoiceId, userId },
+      { status: "paid" },
+      { new: true }
+    );
+  }
 }

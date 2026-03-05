@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 export default function DashboardLayout({
   children,
 }: {
